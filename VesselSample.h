@@ -1,10 +1,12 @@
 #ifndef VESSELSAMPLE_H
 #define VESSELSAMPLE_H
 
+#include "Harmonic.h"
 
 #include <cmath>
 #include <complex>
 #include <math.h>
+#include <list>
 
 
 using namespace std;
@@ -15,6 +17,8 @@ public:
     VesselSample(double radius, double length, double wall);
     VesselSample(const VesselSample& orig);
     virtual ~VesselSample();
+    
+    void compute(list<Harmonic> & in);
 private:
     const static double CONST_VISCOSITY = 5000000.0;
     const static double CONST_DENSITY   = 1060.0;
@@ -43,6 +47,10 @@ private:
     double getC1(double frequency);
     double getC2(double frequency);
     double getC3(double frequency);
+    complex<double> getZx(double frequency);
+    complex<double> getZy(double frequency);
+    complex<double> getZforParallelRC(double r, double c, double w);
+    void processHarmonic(Harmonic & harmonic);
 };
 
 #endif /* VESSELSAMPLE_H */

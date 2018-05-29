@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "VesselSample.h"
 
 
@@ -123,4 +125,65 @@ double VesselSample::getR2(double frequency) {
 
 double VesselSample::getR3(double frequency) {
     return 1.0/(LAPLACE_B2*getC3(frequency));
+}
+
+
+
+
+complex<double> VesselSample::getZx(double frequency) {
+    double w = 2*M_PI*frequency;
+    complex<double> res(getR1(frequency), w*getL1(frequency));
+    return res;
+}
+
+
+
+complex<double> VesselSample::getZy(double frequency) {
+    complex<double> res(0, 0);
+    
+    double w = 2*M_PI*frequency;
+    complex<double> z1(0, -1.0/(w*getC1(frequency)));
+    complex<double> z2 = getZforParallelRC(getR2(frequency), getC2(frequency), w);
+    complex<double> z3 = getZforParallelRC(getR3(frequency), getC3(frequency), w);
+    
+    return z1 + z2 + z3;
+}
+
+
+
+complex<double> VesselSample::getZforParallelRC(double r, double c, double w) {
+    complex<double> res(0, 0);
+    
+    double up = r*pow(w,2)*pow(c,2);
+    double down = pow(r,2) + pow(w,2)*pow(c,2);
+
+    res.real(up/down);
+    
+    up = pow(r,2)*w*c;
+    down = pow(r,2) + pow(w,2)*pow(c,2);
+    
+    res.imag(up/down);
+    
+    return res;
+}
+
+
+
+
+void VesselSample::compute(list<Harmonic> & in) {
+    for (auto it = in.begin(); it != in.end(); ++it) {
+        processHarmonic(*it);
+    }
+}
+
+
+
+void VesselSample::processHarmonic(Harmonic & harmonic) {
+    complex<double> Uin(harmonic.inAmplitude*cos(harmonic.inPhase), harmonic.inAmplitude*sin(harmonic.inPhase));
+    complex<double> zx = getZx(harmonic.angularVelocity);
+    complex<double> zy = getZy(harmonic.angularVelocity);
+    complex<double> Uout = (Uin*zy)/(zx+zy);
+    
+    harmonic.outAmplitude = sqrt(pow(Uout.real(), 2) + pow(Uout.imag(),2));
+    harmonic.outPhase = atan(Uout.real()/Uout.imag());
 }
