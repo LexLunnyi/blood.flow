@@ -4,55 +4,56 @@
  * 
  */
 int main(int argc, char** argv) {
-    double vesselRadius = 0.0025;
     
+    //double vesselRadius = 0.005;
+    //double vesselLength = 0.015;
+    //double vesselWall   = 0.01;
+     
+    double vesselRadius = 0.0037;
+    double vesselLength = 0.089;
+    double vesselWall   = 0.0001;
     
     std::cout << "Test!";
     
-    /*
-    std::complex<double> test_c(0, 1);
-    std::complex<double> new_c = pow(test_c, 1.5);
-    std::cout << new_c << endl;
-     */
-    
     ofstream file("inlet.csv");
     if (!file.is_open()) {
         std::cerr << "Error open CSV file" << endl;
         return -1;
     }
     
-    double in, out = 0.0;
-    for(int i = 0; i < 1000; i++) {
-        in = i / 1.0;
-        //out = inlet(in);
-        //out = getL1(vesselRadius, in);
-        file << in << "; " << out << ";" << endl;
-    }
+    list<PHarmonic> input;
+    getInputSignals(input);
     
-    file.close();
+    VesselSample vessel(vesselRadius, vesselLength, vesselWall);
     
-    
-    return 0;
     
     /*
-    ofstream file("inlet.csv");
-    if (!file.is_open()) {
-        std::cerr << "Error open CSV file" << endl;
-        return -1;
+    double frequency;
+    for(int i = 1; i < 10000; i++) {
+        frequency = i / 100.0;
+        PHarmonic f(new Harmonic(5.0, 0.0, frequency));
+        vessel.setFrequency(frequency);
+        vessel.processHarmonic(f);
+        file << f->outAmplitude << ";" << endl;
+    }*/
+    
+    
+    
+    
+    vessel.compute(input);
+    double in, out = 0.0;
+    for(int i = 0; i < 8000; i++) {
+        getGrafPoint(input, i / 1000.0, &in, &out);
+        file << 100.0+in << "; " << 80.0+out << ";" << endl;
+        //file << in << "; " << out << ";" << endl;
     }
     
-    double in, out = 0.0;
-    for(int i = 0; i < 15000; i++) {
-        in = i / 1000.0;
-        //out = inlet(in);
-        out = inlet_gauge(in);
-        file << in << "; " << out << ";" << endl;
-    }
+    
     
     file.close();
     
+    
     return 0;
-     */
 }
 
 
@@ -77,4 +78,28 @@ double inlet_gauge(double time) {
     res += sin(50*time);
     res += sin(70*time);
     return res;
+}
+
+
+
+
+void getInputSignals(list<PHarmonic> & in) {
+    in.push_back(PHarmonic(new Harmonic(10.0, 0.0, 1.2)));
+    in.push_back(PHarmonic(new Harmonic(8.0, -(M_PI/4), 2.4)));
+    in.push_back(PHarmonic(new Harmonic(1.0, 0.0, 20.0)));
+    //in.push_back(PHarmonic(new Harmonic(0.9, 0.0, 17.68)));
+    in.push_back(PHarmonic(new Harmonic(1.0, -(M_PI/4), 50.0)));
+}
+
+
+
+void getGrafPoint(list<PHarmonic> & input, double time, double *pInlet, double *pOutlet) {
+    *pInlet = 0.0;
+    *pOutlet = 0.0;
+    list<PHarmonic>::iterator it;
+    for(it = input.begin(); it != input.end(); ++it) {
+        *pInlet += (*it)->inAmplitude*sin((*it)->frequency*time + (*it)->inPhase);
+        //*pOutlet += (*it)->outAmplitude*sin((*it)->frequency*time + (*it)->outPhase);
+        *pOutlet += (*it)->outAmplitude*sin((*it)->frequency*time);
+    }
 }
